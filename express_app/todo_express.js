@@ -32,7 +32,7 @@ expressApp.use(parser.urlencoded({ extended: false }));
 //         if (err) onDBErr(res)
 
 //         else {
-//             connection.query('SELECT * FROM todos', (err, rows) => {
+//             connection.query('SELECT id, title, time FROM todos', (err, rows) => {
 //                 connection.release()
 //                 if (err) onReqErr(res)
 
@@ -50,7 +50,7 @@ expressApp.get("/todo_express/api/todos/pending", (req, res) => {
         if (err) onDBErr(res);
         else {
             connection.query(
-                "SELECT * FROM todos WHERE time IS NULL",
+                "SELECT id, title, time FROM todos WHERE time IS NULL",
                 (err, rows) => {
                     connection.release();
                     if (err) {
@@ -72,7 +72,7 @@ expressApp.get("/todo_express/api/todos/completed", (req, res) => {
         if (err) onDBErr(res);
         else {
             connection.query(
-                "SELECT * FROM todos WHERE time IS NOT NULL",
+                "SELECT id, title, time FROM todos WHERE time IS NOT NULL",
                 (err, rows) => {
                     connection.release();
                     if (err) {
@@ -89,26 +89,26 @@ expressApp.get("/todo_express/api/todos/completed", (req, res) => {
     });
 });
 
-// expressApp.get("/todo_express/api/todos/details/:id", (req, res) => {
-//     pool.getConnection((err, connection) => {
-//         if (err) onDBErr(res);
-//         else {
-//             connection.query(
-//                 "SELECT * FROM todos WHERE id = ?", [req.params.id],
-//                 (err, rows) => {
-//                     connection.release();
-//                     if (err) onReqErr(err, res);
-//                     else {
-//                         onSuccess();
-//                         return res
-//                             .status(200)
-//                             .json({ result: "success", info: "Todo Details", rows });
-//                     }
-//                 }
-//             );
-//         }
-//     });
-// });
+expressApp.get("/todo_express/api/todos/details/:id", (req, res) => {
+    pool.getConnection((err, connection) => {
+        if (err) onDBErr(res);
+        else {
+            connection.query(
+                "SELECT * FROM todos WHERE id = ?", [req.params.id],
+                (err, rows) => {
+                    connection.release();
+                    if (err) onReqErr(err, res);
+                    else {
+                        onSuccess();
+                        return res
+                            .status(200)
+                            .json({ result: "success", info: "Todo Details", rows });
+                    }
+                }
+            );
+        }
+    });
+});
 
 expressApp.post("/todo_express/api/todos", (req, res) => {
     pool.getConnection((err, connection) => {
