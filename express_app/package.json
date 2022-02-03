@@ -1,0 +1,19 @@
+{
+    "name": "expressapp",
+    "version": "1.0.0",
+    "description": "Backend support for the todo app",
+    "main": "app.js",
+    "scripts": {
+        "start": "nodemon todo_express.js"
+    },
+    "author": "Jayasubin J",
+    "license": "ISC",
+    "dependencies": {
+        "body-parser": "^1.19.1",
+        "express": "^4.17.2",
+        "mysql": "^2.18.1"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.15"
+    }
+}
