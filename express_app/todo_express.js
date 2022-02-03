@@ -1,6 +1,7 @@
 const express = require("express");
 const mysql = require("mysql");
 const parser = require("body-parser");
+const path = require("path");
 
 //to log
 const { onListen, onReq, onSuccess } = require("./printers");
@@ -166,8 +167,33 @@ expressApp.post(
         src.pipe(dest);
         src.on("end", function() {
             fs.unlinkSync(req.file.path);
-            res.status(200).json({ result: "success", info: "Added one picture" });
-            onSuccess();
+            //res.status(200).json({ result: "success", info: "Added one " });
+
+            //add path to file in db
+            pool.getConnection((err, connection) => {
+                if (err) onDBErr(res);
+                else {
+                    var attachment = path.join(
+                        __dirname,
+                        `/uploads/${req.params.id}.${extension}`
+                    );
+
+                    connection.query(
+                        "UPDATE todos SET attachment =? WHERE id=?", [attachment, req.params.id],
+                        (err, rows) => {
+                            connection.release();
+                            if (err) onReqErr(err, res);
+                            else {
+                                onSuccess();
+                                return res.status(200).json({
+                                    result: "success",
+                                    info: "Added one picture",
+                                });
+                            }
+                        }
+                    );
+                }
+            });
         });
         src.on("error", function(err) {
             res.status(400).json({ result: "fail", info: "Something went wrong" });
