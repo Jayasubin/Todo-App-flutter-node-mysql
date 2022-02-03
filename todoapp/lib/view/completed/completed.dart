@@ -40,7 +40,7 @@ class _CompletedState extends State<Completed> {
           child: Icon(
             Icons.hourglass_empty_rounded,
             color: kDoneColor,
-            size: 130,
+            size: 100,
           ),
         ),
       );

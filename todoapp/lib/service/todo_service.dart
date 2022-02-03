@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -40,7 +39,6 @@ class TodoService {
         pending.add(Todo(
           id: row['id'],
           title: row['title'],
-          description: row['description'],
           time: row['time'] != null ? DateTime.parse(row['time']) : null,
         ));
       }
@@ -64,7 +62,6 @@ class TodoService {
         completed.add(Todo(
           id: row['id'],
           title: row['title'],
-          description: row['description'],
           time: row['time'] != null ? DateTime.parse(row['time']) : null,
         ));
       }
@@ -75,7 +72,28 @@ class TodoService {
 
   //void getAll() {}
 
-  //void getDetail({required int id}) {}
+  Future<Todo> getDetail({required int id}) async {
+    late Todo detail;
+
+    http.Response response = await http.get(Uri.parse('$baseUrl/completed'));
+
+    var decoded = jsonDecode(response.body);
+    currentInfo = decoded['info'];
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> row = decoded['rows'][0];
+
+      detail = Todo(
+        id: row['id'],
+        title: row['title'],
+        description: row['description'],
+        attachment: row['attachment'],
+        time: row['time'] != null ? DateTime.parse(row['time']) : null,
+      );
+    }
+
+    return detail;
+  }
 
   Future<bool> add({
     required String title,
@@ -100,6 +118,26 @@ class TodoService {
       "title": newTitle,
       "description": newDesc,
     });
+
+    var decoded = jsonDecode(response.body);
+    currentInfo = decoded['info'];
+
+    return response.statusCode == 200;
+  }
+
+  Future<bool> attach({required int id, required String attachmentPath}) async {
+    var request =
+        http.MultipartRequest('POST', Uri.parse('$baseUrl/$id/upload'));
+
+    request.files
+        .add((await http.MultipartFile.fromPath('picture', attachmentPath)));
+
+    var responseStream = await request.send();
+
+    /*var response = await http
+        .post(Uri.parse('$baseUrl/$id/upload'), body: {"picture": attachment});*/
+
+    var response = await http.Response.fromStream(responseStream);
 
     var decoded = jsonDecode(response.body);
     currentInfo = decoded['info'];
