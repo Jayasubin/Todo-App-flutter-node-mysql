@@ -2,8 +2,14 @@ const express = require("express");
 const mysql = require("mysql");
 const parser = require("body-parser");
 
+//to log
 const { onListen, onReq, onSuccess } = require("./printers");
 const { onDBErr, onReqErr, onInvalid } = require("./errors");
+
+//to upload image
+var multer = require("multer");
+var fs = require("fs");
+var upload = multer({ dest: "uploads/" });
 
 const expressApp = express();
 const port = 2500;
@@ -143,6 +149,32 @@ expressApp.put("/todo_express/api/todos/edit/:id", (req, res) => {
         }
     });
 });
+
+//file upload request
+expressApp.post(
+    "/todo_express/api/todos/:id/upload",
+    upload.single("picture"),
+    function(req, res) {
+        var src = fs.createReadStream(req.file.path);
+
+        var pos = req.file.originalname.split(".").length - 1;
+        var extension = req.file.originalname.split(".")[pos];
+
+        var dest = fs.createWriteStream(
+            "uploads/" + req.params.id + "." + extension
+        );
+        src.pipe(dest);
+        src.on("end", function() {
+            fs.unlinkSync(req.file.path);
+            res.status(200).json({ result: "success", info: "Added one picture" });
+            onSuccess();
+        });
+        src.on("error", function(err) {
+            res.status(400).json({ result: "fail", info: "Something went wrong" });
+            console.log("Failed to upload");
+        });
+    }
+);
 
 expressApp.put("/todo_express/api/todos/update/:id", (req, res) => {
     pool.getConnection((err, connection) => {
