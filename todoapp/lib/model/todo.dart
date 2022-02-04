@@ -2,12 +2,14 @@ class Todo {
   Todo({
     required this.id,
     required this.title,
-    required this.description,
+    this.description,
+    this.attachment,
     this.time,
   });
 
   int id;
   String title;
-  String description;
+  String? description;
+  String? attachment;
   DateTime? time;
 }

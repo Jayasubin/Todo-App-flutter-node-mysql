@@ -13,7 +13,7 @@ class EditAlert extends StatelessWidget {
   Widget build(BuildContext context) {
     final GlobalKey<FormState> formKey = GlobalKey();
     late String title;
-    late String description;
+    late String? description;
 
     return AlertDialog(
       title: const Text('Edit ToDo'),
@@ -52,8 +52,8 @@ class EditAlert extends StatelessWidget {
                 formKey.currentState!.save();
                 formKey.currentState!.reset();
 
-                bool edited = await TodoService()
-                    .edit(id: toEdit.id, newTitle: title, newDesc: description);
+                bool edited = await TodoService().edit(
+                    id: toEdit.id, newTitle: title, newDesc: description ?? '');
                 TodoService().showCustomSnackBar(context);
                 if (edited) {
                   //refresh();

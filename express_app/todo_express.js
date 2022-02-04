@@ -1,9 +1,16 @@
 const express = require("express");
 const mysql = require("mysql");
 const parser = require("body-parser");
+const path = require("path");
 
+//to log
 const { onListen, onReq, onSuccess } = require("./printers");
 const { onDBErr, onReqErr, onInvalid } = require("./errors");
+
+//to upload image
+var multer = require("multer");
+var fs = require("fs");
+var upload = multer({ dest: "uploads/" });
 
 const expressApp = express();
 const port = 2500;
@@ -25,7 +32,7 @@ expressApp.use(parser.urlencoded({ extended: false }));
 //         if (err) onDBErr(res)
 
 //         else {
-//             connection.query('SELECT * FROM todos', (err, rows) => {
+//             connection.query('SELECT id, title, time FROM todos', (err, rows) => {
 //                 connection.release()
 //                 if (err) onReqErr(res)
 
@@ -43,7 +50,7 @@ expressApp.get("/todo_express/api/todos/pending", (req, res) => {
         if (err) onDBErr(res);
         else {
             connection.query(
-                "SELECT * FROM todos WHERE time IS NULL",
+                "SELECT id, title, time FROM todos WHERE time IS NULL",
                 (err, rows) => {
                     connection.release();
                     if (err) {
@@ -65,7 +72,7 @@ expressApp.get("/todo_express/api/todos/completed", (req, res) => {
         if (err) onDBErr(res);
         else {
             connection.query(
-                "SELECT * FROM todos WHERE time IS NOT NULL",
+                "SELECT id, title, time FROM todos WHERE time IS NOT NULL",
                 (err, rows) => {
                     connection.release();
                     if (err) {
@@ -82,26 +89,41 @@ expressApp.get("/todo_express/api/todos/completed", (req, res) => {
     });
 });
 
-// expressApp.get("/todo_express/api/todos/details/:id", (req, res) => {
-//     pool.getConnection((err, connection) => {
-//         if (err) onDBErr(res);
-//         else {
-//             connection.query(
-//                 "SELECT * FROM todos WHERE id = ?", [req.params.id],
-//                 (err, rows) => {
-//                     connection.release();
-//                     if (err) onReqErr(err, res);
-//                     else {
-//                         onSuccess();
-//                         return res
-//                             .status(200)
-//                             .json({ result: "success", info: "Todo Details", rows });
-//                     }
-//                 }
-//             );
-//         }
-//     });
-// });
+expressApp.get("/todo_express/api/todos/detail/:id", (req, res) => {
+    pool.getConnection((err, connection) => {
+        if (err) onDBErr(res);
+        else {
+            connection.query(
+                "SELECT * FROM todos WHERE id = ?", [req.params.id],
+                (err, rows) => {
+                    connection.release();
+                    if (err) onReqErr(err, res);
+                    else {
+                        onSuccess();
+                        return res.status(200).json({
+                            result: "success",
+                            info: "Todo Details",
+                            attachment: rows[0].attachment,
+                            rows,
+                        });
+                    }
+                }
+            );
+        }
+    });
+});
+
+expressApp.get("/todo_express/api/todos/image/:id", (req, res) => {
+    const imagePath = path.join(__dirname, `uploads/${req.params.id}.jpg`);
+    try {
+        if (fs.existsSync(imagePath)) {
+            res.sendFile(imagePath);
+        }
+    } catch (err) {
+        console.error(`File not exists`);
+        res.status(404).json({ result: "fail", info: "File not found" });
+    }
+});
 
 expressApp.post("/todo_express/api/todos", (req, res) => {
     pool.getConnection((err, connection) => {
@@ -144,6 +166,58 @@ expressApp.put("/todo_express/api/todos/edit/:id", (req, res) => {
     });
 });
 
+//file upload request
+expressApp.post(
+    "/todo_express/api/todos/:id/upload",
+    upload.single("picture"),
+    function(req, res) {
+        var src = fs.createReadStream(req.file.path);
+
+        var pos = req.file.originalname.split(".").length - 1;
+        var extension = req.file.originalname.split(".")[pos];
+
+        var dest = fs.createWriteStream(
+            "uploads/" + req.params.id + "." + extension
+        );
+
+        src.pipe(dest);
+        src.on("end", function() {
+            fs.unlinkSync(req.file.path);
+            //res.status(200).json({ result: "success", info: "Added one " });
+
+            //add path to file in db
+            pool.getConnection((err, connection) => {
+                if (err) onDBErr(res);
+                else {
+                    var attachment = path.join(
+                        __dirname,
+                        `/uploads/${req.params.id}.${extension}`
+                    );
+
+                    connection.query(
+                        "UPDATE todos SET attachment =? WHERE id=?", [attachment, req.params.id],
+                        (err, rows) => {
+                            connection.release();
+                            if (err) onReqErr(err, res);
+                            else {
+                                onSuccess();
+                                return res.status(200).json({
+                                    result: "success",
+                                    info: "Added one picture",
+                                });
+                            }
+                        }
+                    );
+                }
+            });
+        });
+        src.on("error", function(err) {
+            res.status(400).json({ result: "fail", info: "Something went wrong" });
+            console.log("Failed to upload");
+        });
+    }
+);
+
 expressApp.put("/todo_express/api/todos/update/:id", (req, res) => {
     pool.getConnection((err, connection) => {
         if (err) onDBErr(res);
@@ -178,6 +252,18 @@ expressApp.delete("/todo_express/api/todos/:id", (req, res) => {
                     connection.release();
                     if (err) onReqErr(err, res);
                     else {
+                        const imagePath = path.join(
+                            __dirname,
+                            `uploads/${req.params.id}.jpg`
+                        );
+                        try {
+                            if (fs.existsSync(imagePath)) {
+                                fs.delete(imagePath);
+                            }
+                        } catch (err) {
+                            console.error(`File not exists`);
+                        }
+
                         onSuccess();
                         return res
                             .status(200)

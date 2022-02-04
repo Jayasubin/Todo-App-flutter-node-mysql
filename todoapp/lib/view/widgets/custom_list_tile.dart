@@ -19,7 +19,7 @@ class CustomListTile extends StatelessWidget {
       padding: const EdgeInsets.only(left: 12.0, top: 15.0, right: 12.0),
       child: ListTile(
         title: Text(currentTodo.title),
-        subtitle: Text(currentTodo.description),
+        //subtitle: Text(currentTodo.description),
         trailing: Checkbox(
           value: currentTodo.time != null,
           onChanged: (bool? value) async {
@@ -45,7 +45,7 @@ class CustomListTile extends StatelessWidget {
           bool refresh = await Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => Detail(thisTodo: currentTodo)));
+                  builder: (context) => Detail(thisTodoID: currentTodo.id)));
           refresh ? getData() : {};
         },
       ),
