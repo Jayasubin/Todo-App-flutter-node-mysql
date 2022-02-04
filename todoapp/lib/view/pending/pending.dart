@@ -25,8 +25,6 @@ class _PendingState extends State<Pending> {
   }
 
   void getData() async {
-    print('Getting data');
-
     List<Todo> pending = await TodoService().getPending();
     pendingWidgets.clear();
 

@@ -18,6 +18,7 @@ class TodoService {
   String currentInfo = '';
 
   void showCustomSnackBar(BuildContext context) {
+    print(currentInfo);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(currentInfo),
       duration: const Duration(milliseconds: 600),
@@ -73,25 +74,19 @@ class TodoService {
   //void getAll() {}
 
   Future<Todo> getDetail({required int id}) async {
-    late Todo detail;
-
-    http.Response response = await http.get(Uri.parse('$baseUrl/completed'));
+    http.Response response = await http.get(Uri.parse('$baseUrl/detail/$id'));
 
     var decoded = jsonDecode(response.body);
     currentInfo = decoded['info'];
 
-    if (response.statusCode == 200) {
-      Map<String, dynamic> row = decoded['rows'][0];
-
-      detail = Todo(
-        id: row['id'],
-        title: row['title'],
-        description: row['description'],
-        attachment: row['attachment'],
-        time: row['time'] != null ? DateTime.parse(row['time']) : null,
-      );
-    }
-
+    Map<String, dynamic> row = decoded['rows'][0];
+    Todo detail = Todo(
+      id: row['id'],
+      title: row['title'],
+      description: row['description'],
+      attachment: row['attachment'],
+      time: row['time'] != null ? DateTime.parse(row['time']) : null,
+    );
     return detail;
   }
 
@@ -133,9 +128,6 @@ class TodoService {
         .add((await http.MultipartFile.fromPath('picture', attachmentPath)));
 
     var responseStream = await request.send();
-
-    /*var response = await http
-        .post(Uri.parse('$baseUrl/$id/upload'), body: {"picture": attachment});*/
 
     var response = await http.Response.fromStream(responseStream);
 

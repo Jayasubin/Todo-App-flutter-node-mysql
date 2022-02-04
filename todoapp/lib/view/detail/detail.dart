@@ -18,11 +18,9 @@ class Detail extends StatefulWidget {
   State<Detail> createState() => _DetailState();
 }
 
-bool isLoading = true;
-
-late Todo thisTodo;
-
 class _DetailState extends State<Detail> {
+  late Todo thisTodo;
+  bool isLoading = true;
   @override
   void initState() {
     getDetail();
@@ -30,7 +28,9 @@ class _DetailState extends State<Detail> {
   }
 
   void getDetail() async {
-    isLoading = true;
+    setState(() {
+      isLoading = true;
+    });
 
     thisTodo = await TodoService().getDetail(id: widget.thisTodoID);
     setState(() {
@@ -70,7 +70,12 @@ class _DetailState extends State<Detail> {
                     const Text('Attachments'),
                     thisTodo.attachment == null
                         ? const Text('N/A')
-                        : Image.file(thisTodo.attachment!),
+                        : SizedBox(
+                            height: 300,
+                            width: 300,
+                            child: Image.network(
+                                '${TodoService().baseUrl}/image/${widget.thisTodoID}'),
+                          ),
                     const CustomDivider(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,

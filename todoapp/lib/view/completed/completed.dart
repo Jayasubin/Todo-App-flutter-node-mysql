@@ -24,8 +24,6 @@ class _CompletedState extends State<Completed> {
   }
 
   void getData() async {
-    print('Getting data');
-
     List<Todo> completed = await TodoService().getCompleted();
     completedWidgets.clear();
 

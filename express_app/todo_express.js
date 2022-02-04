@@ -89,7 +89,7 @@ expressApp.get("/todo_express/api/todos/completed", (req, res) => {
     });
 });
 
-expressApp.get("/todo_express/api/todos/details/:id", (req, res) => {
+expressApp.get("/todo_express/api/todos/detail/:id", (req, res) => {
     pool.getConnection((err, connection) => {
         if (err) onDBErr(res);
         else {
@@ -100,14 +100,29 @@ expressApp.get("/todo_express/api/todos/details/:id", (req, res) => {
                     if (err) onReqErr(err, res);
                     else {
                         onSuccess();
-                        return res
-                            .status(200)
-                            .json({ result: "success", info: "Todo Details", rows });
+                        return res.status(200).json({
+                            result: "success",
+                            info: "Todo Details",
+                            attachment: rows[0].attachment,
+                            rows,
+                        });
                     }
                 }
             );
         }
     });
+});
+
+expressApp.get("/todo_express/api/todos/image/:id", (req, res) => {
+    const imagePath = path.join(__dirname, `uploads/${req.params.id}.jpg`);
+    try {
+        if (fs.existsSync(imagePath)) {
+            res.sendFile(imagePath);
+        }
+    } catch (err) {
+        console.error(`File not exists`);
+        res.status(404).json({ result: "fail", info: "File not found" });
+    }
 });
 
 expressApp.post("/todo_express/api/todos", (req, res) => {
@@ -164,6 +179,7 @@ expressApp.post(
         var dest = fs.createWriteStream(
             "uploads/" + req.params.id + "." + extension
         );
+
         src.pipe(dest);
         src.on("end", function() {
             fs.unlinkSync(req.file.path);
@@ -236,6 +252,18 @@ expressApp.delete("/todo_express/api/todos/:id", (req, res) => {
                     connection.release();
                     if (err) onReqErr(err, res);
                     else {
+                        const imagePath = path.join(
+                            __dirname,
+                            `uploads/${req.params.id}.jpg`
+                        );
+                        try {
+                            if (fs.existsSync(imagePath)) {
+                                fs.delete(imagePath);
+                            }
+                        } catch (err) {
+                            console.error(`File not exists`);
+                        }
+
                         onSuccess();
                         return res
                             .status(200)

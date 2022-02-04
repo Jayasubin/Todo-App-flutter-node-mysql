@@ -1,5 +1,3 @@
-import 'dart:io';
-
 class Todo {
   Todo({
     required this.id,
@@ -12,6 +10,6 @@ class Todo {
   int id;
   String title;
   String? description;
-  File? attachment;
+  String? attachment;
   DateTime? time;
 }
